@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gratiferia</title>
+</head>
+
+<body>
+  <h1>
+    Login
+  </h1>
+
+  <label for="email">Email</label>
+  <input type="text" id="email"><br />
+  <label for="password">Password</label>
+  <input type="password" id="password"><br />
+
+  <button id="login-button">Ingresar</button>
+
+  <p>Si no tienes cuenta registrate <a href="/registro.html">aca</a></p>
+</body>
+<script>
+  const authInfo = localStorage.getItem("jwt");
+
+  if (authInfo) {
+    window.location.href = "/"; // Si el usuario ya esta identificado, lo mandamos al home
+  }
+
+  const button = document.getElementById("login-button");
+  const email = document.getElementById("email");
+  const password = document.getElementById("password");
+
+  button.addEventListener("click", async () => {
+    try {
+      const res = await fetch('http://localhost:3000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email: email.value,
+          password: password.value
+        })
+      });
+
+      if (!res.ok) { // Si la respuesta no tiene la propiedad "ok" significa que el status code es distinto de 200 / 2XX, por lo tanto, es un error
+        throw 'Error de auth'
+      }
+
+      const resAsJSON = await res.json();
+
+      localStorage.setItem('jwt', resAsJSON);
+      window.location.href = '/'; // Mandamos al usuario al inicio
+    } catch (error) {
+      alert(`algo salio mal, ${error}`)
+    }
+  })
+
+</script>
+
+</html>
