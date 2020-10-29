@@ -1,11 +1,11 @@
 // Si el usuario no esta identificado, lo mandamos al login
 
 const jwt = localStorage.getItem("jwt");
-const decodedJwt = parseJwt(jwt);
 
 if (!jwt) {
   window.location.href = "/login.html";
 }
+const decodedJwt = parseJwt(jwt);
 
 const saludo = document.getElementById("saludo");
 
