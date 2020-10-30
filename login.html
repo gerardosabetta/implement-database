@@ -17,6 +17,8 @@
   <label for="password">Password</label>
   <input type="password" id="password"><br />
 
+  <div id="error-container" style="color:red"></div>
+
   <button id="login-button">Ingresar</button>
 
   <p>Si no tienes cuenta registrate <a href="/registro.html">aca</a></p>
@@ -31,6 +33,7 @@
   const button = document.getElementById("login-button");
   const email = document.getElementById("email");
   const password = document.getElementById("password");
+  const errorContainer = document.getElementById("error-container");
 
   button.addEventListener("click", async () => {
     try {
@@ -54,7 +57,7 @@
       localStorage.setItem('jwt', resAsJSON);
       window.location.href = '/'; // Mandamos al usuario al inicio
     } catch (error) {
-      alert(`algo salio mal, ${error}`)
+      errorContainer.textContent = `Algo salio mal, ${error}`;
     }
   })
 

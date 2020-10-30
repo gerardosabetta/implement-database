@@ -4,46 +4,13 @@ const helmet = require("helmet");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const secreto = "jkdlhfjk2h34jk12h34jkdhsafj2384hajkhsd";
+const MD5 = require("./utils");
+const db = require("./db");
 
 server.use(express.json());
 server.use(express.urlencoded({ extended: false }));
 server.use(helmet());
 server.use(cors());
-
-// 💩 Reemplazame por data de verdad!
-const users = [
-  {
-    email: "jorgeborges@gmail.com",
-    password: "1234",
-  },
-  {
-    email: "juanperez@gmail.com",
-    password: "5678",
-  },
-  {
-    email: "robertorodriguez@gmail.com",
-    password: "2468",
-  },
-];
-
-// 💩 Reemplazame por data de verdad!
-const products = [
-  {
-    name: "Linterna",
-    owner: "jorgeborges@gmail.com",
-    available: true,
-  },
-  {
-    name: "Libro",
-    owner: "juanperez@gmail.com",
-    available: true,
-  },
-  {
-    name: "Celular",
-    owner: "robertorodriguez@gmail.com",
-    available: true,
-  },
-];
 
 server.post("/register", (req, res) => {
   const user = {
@@ -55,14 +22,21 @@ server.post("/register", (req, res) => {
   res.json(user);
 });
 
-server.post("/login", (req, res) => {
-  const usuario = users.find((user) => {
-    return user.email === req.body.email && user.password === req.body.password;
-  });
-  if (usuario) {
+server.post("/login", async (req, res) => {
+  const MD5Password = MD5(req.body.password);
+  const usuarioEncontrados = await db.sequelize.query(
+    "SELECT * FROM `usuario` WHERE email = :email AND password = :password",
+    {
+      replacements: { email: req.body.email, password: MD5Password },
+      type: db.sequelize.QueryTypes.SELECT,
+    }
+  );
+
+  if (usuarioEncontrados.length === 1) {
     const jwtUsuario = jwt.sign(
       {
-        usuario: usuario.email,
+        user_id: usuarioEncontrados[0].user_id,
+        usuario: usuarioEncontrados[0].email,
       },
       secreto
     );
@@ -95,7 +69,7 @@ const userAuth = (req, res, next) => {
   }
 };
 
-server.post("/comprar", userAuth, (req, res) => {
+server.post("/comprar/:productId", userAuth, (req, res) => {
   const productName = req.body.name;
   const boughtProduct = products.find(
     (product) => product.name === productName
@@ -114,19 +88,27 @@ server.post("/comprar", userAuth, (req, res) => {
   }
 });
 
-server.get("/products", userAuth, (req, res) => {
-  res.send(products);
+server.get("/products", userAuth, async (req, res) => {
+  const consulta = await db.sequelize.query("SELECT * FROM `productos`", {
+    type: db.sequelize.QueryTypes.SELECT,
+  });
+  res.json(consulta);
 });
 
-server.post("/newproduct", userAuth, (req, res) => {
-  const product = {
-    name: req.body.name,
-    owner: req.authorizationInfo.owner,
-    availableToBuy: true,
-  };
-  products.push(product);
+server.post("/products", userAuth, async (req, res) => {
+  await db.sequelize.query(
+    "INSERT INTO productos (`nombre`, `vendedor_id`) VALUES (:nombre, :vendedorId)",
+    {
+      replacements: {
+        nombre: req.body.nombre,
+        vendedorId: req.authorizationInfo.user_id,
+      },
+      type: db.sequelize.QueryTypes.INSERT,
+    }
+  );
+
   res.status(201);
-  res.json(product);
+  res.json("Salio todo bien :D");
 });
 server.listen(3000, () => {
   console.log("server en puerto 3000");

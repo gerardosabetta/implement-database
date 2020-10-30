@@ -5,6 +5,7 @@ const jwt = localStorage.getItem("jwt");
 if (!jwt) {
   window.location.href = "/login.html";
 }
+
 const decodedJwt = parseJwt(jwt);
 
 const saludo = document.getElementById("saludo");
