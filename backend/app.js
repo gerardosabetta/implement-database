@@ -69,29 +69,35 @@ const userAuth = (req, res, next) => {
   }
 };
 
-server.post("/comprar/:productId", userAuth, (req, res) => {
-  const productName = req.body.name;
-  const boughtProduct = products.find(
-    (product) => product.name === productName
-  );
-  if (boughtProduct) {
-    if (boughtProduct.availableToBuy === false) {
-      res.status(400);
-      res.send("El producto no esta disponible");
-      return;
-    }
-    boughtProduct.availableToBuy = false;
-    res.send("Producto comprado");
-  } else {
-    res.status(404);
-    res.send("Producto no encontrado");
+server.post("/comprar/:productId", userAuth, async (req, res) => {
+  const productId = req.params.productId;
+  try {
+    await db.sequelize.query(
+      "UPDATE productos SET comprador_id = :compradorId WHERE producto_id = :productId",
+      {
+        replacements: {
+          compradorId: req.authorizationInfo.user_id,
+          productId: productId,
+        },
+        type: db.sequelize.QueryTypes.UPDATE,
+      }
+    );
+    res.json("Salio todo bien :D");
+  } catch (err) {
+    res.status(500);
+    res.send("Algo salio mal", err);
   }
+
+  console.log(consulta);
 });
 
 server.get("/products", userAuth, async (req, res) => {
-  const consulta = await db.sequelize.query("SELECT * FROM `productos`", {
-    type: db.sequelize.QueryTypes.SELECT,
-  });
+  const consulta = await db.sequelize.query(
+    "SELECT productos.producto_id, productos.nombre, productos.vendedor_id, productos.comprador_id, usuario.email AS vendedor_email FROM productos JOIN usuario ON productos.vendedor_id = usuario.user_id;",
+    {
+      type: db.sequelize.QueryTypes.SELECT,
+    }
+  );
   res.json(consulta);
 });
 
